@@ -44,6 +44,18 @@
                 </ion-item>
               </ion-menu-toggle>
             </ion-list>
+
+            <ion-list lines="none" class="logout-list">
+              <ion-item button :detail="false" class="nav-item logout" @click="signOut">
+                <div class="nav-icon" slot="start">
+                  <ion-icon aria-hidden="true" :icon="logOutOutline"></ion-icon>
+                </div>
+                <ion-label>
+                  <span class="nav-label">Sign out</span>
+                  <small>End this session</small>
+                </ion-label>
+              </ion-item>
+            </ion-list>
           </div>
         </ion-content>
       </ion-menu>
@@ -67,7 +79,7 @@ import {
   IonSplitPane,
 } from '@ionic/vue';
 import { computed, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import {
   archiveOutline,
   archiveSharp,
@@ -81,10 +93,13 @@ import {
   trendingUpSharp,
   gridOutline,
   gridSharp,
+  logOutOutline,
 } from 'ionicons/icons';
+import { supabase } from './supabase';
 
 const selectedIndex = ref(0);
 const route = useRoute();
+const router = useRouter();
 const showMenu = computed(() => route.path !== '/login');
 const appPages = [
   {
@@ -133,6 +148,11 @@ const appPages = [
 const path = window.location.pathname.split('folder/')[1];
 if (path !== undefined) {
   selectedIndex.value = appPages.findIndex((page) => page.url.endsWith(path));
+}
+
+async function signOut() {
+  await supabase.auth.signOut();
+  await router.replace('/login');
 }
 </script>
 
@@ -215,6 +235,16 @@ ion-menu {
 #nav-list {
   margin-top: 10px;
   background: transparent;
+}
+
+.logout-list {
+  margin-top: 16px;
+  background: transparent;
+}
+
+.logout .nav-icon {
+  background: rgba(163, 87, 78, 0.12);
+  color: var(--ion-color-danger);
 }
 
 .nav-item {
