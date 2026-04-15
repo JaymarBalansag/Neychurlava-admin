@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router';
 import { RouteRecordRaw } from 'vue-router';
+import { initAuth, useAuth } from '../auth';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -40,5 +41,21 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes
 })
+
+router.beforeEach(async (to) => {
+  await initAuth();
+  const { session } = useAuth();
+  const authed = Boolean(session.value);
+
+  if (to.path === '/login' && authed) {
+    return '/folder/Dashboard';
+  }
+
+  if (to.path.startsWith('/folder') && !authed) {
+    return '/login';
+  }
+
+  return true;
+});
 
 export default router

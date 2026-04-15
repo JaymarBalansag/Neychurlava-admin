@@ -32,11 +32,17 @@
             ></ion-input>
           </ion-item>
 
-          <ion-button expand="block" color="primary" class="primary" @click="goIn">Sign in</ion-button>
-          <ion-button expand="block" fill="clear" color="primary" class="secondary" @click="goIn">Continue</ion-button>
+          <ion-button expand="block" color="primary" class="primary" :disabled="loading" @click="signIn">
+            {{ loading ? 'Signing in...' : 'Sign in' }}
+          </ion-button>
+          <ion-button expand="block" fill="clear" color="primary" class="secondary" :disabled="loading" @click="signIn">
+            Continue
+          </ion-button>
+
+          <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
         </section>
 
-        <p class="footnote">Tip: hook this up to Supabase auth when you are ready.</p>
+        <p class="footnote">Use a Supabase email/password account.</p>
       </div>
     </ion-content>
   </ion-page>
@@ -53,6 +59,7 @@ import {
 } from '@ionic/vue';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { supabase } from '../supabase';
 
 type IonInputEvent = CustomEvent<{ value?: string | null }>;
 
@@ -60,6 +67,8 @@ const router = useRouter();
 
 const email = ref('');
 const password = ref('');
+const loading = ref(false);
+const errorMsg = ref('');
 
 function onEmail(ev: IonInputEvent) {
   email.value = ev.detail.value ?? '';
@@ -69,8 +78,29 @@ function onPassword(ev: IonInputEvent) {
   password.value = ev.detail.value ?? '';
 }
 
-function goIn() {
-  void router.push('/folder/Dashboard');
+async function signIn() {
+  if (loading.value) return;
+
+  errorMsg.value = '';
+  loading.value = true;
+
+  try {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.value.trim(),
+      password: password.value,
+    });
+
+    if (error) {
+      errorMsg.value = error.message;
+      return;
+    }
+
+    await router.replace('/folder/Dashboard');
+  } catch (err) {
+    errorMsg.value = err instanceof Error ? err.message : 'Sign-in failed. Try again.';
+  } finally {
+    loading.value = false;
+  }
 }
 </script>
 
@@ -151,5 +181,12 @@ function goIn() {
   margin: 0;
   color: var(--ion-color-medium);
   text-align: center;
+}
+
+.error {
+  margin: 12px 2px 0;
+  color: var(--ion-color-danger);
+  line-height: 1.4;
+  font-weight: 600;
 }
 </style>

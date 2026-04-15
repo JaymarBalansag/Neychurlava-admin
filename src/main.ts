@@ -32,6 +32,10 @@ import '@ionic/vue/css/display.css';
 
 /* Theme variables */
 import './theme/variables.css';
+import { initAuth } from './auth';
+
+// Keep auth session in sync across refreshes/tabs.
+initAuth();
 
 const app = createApp(App)
   .use(IonicVue)
