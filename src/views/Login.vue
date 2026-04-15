@@ -1,0 +1,155 @@
+﻿<template>
+  <ion-page>
+    <ion-content :fullscreen="true" class="login-content">
+      <div class="shell">
+        <section class="brand">
+          <p class="eyebrow">Neychurlava</p>
+          <h1>Welcome back</h1>
+          <p class="subcopy">Sign in to manage orders, deliveries, and sales.</p>
+        </section>
+
+        <section class="card">
+          <ion-item lines="none" class="field">
+            <ion-label position="stacked">Email</ion-label>
+            <ion-input
+              type="email"
+              inputmode="email"
+              autocomplete="email"
+              placeholder="you@company.com"
+              :value="email"
+              @ionInput="onEmail"
+            ></ion-input>
+          </ion-item>
+
+          <ion-item lines="none" class="field">
+            <ion-label position="stacked">Password</ion-label>
+            <ion-input
+              type="password"
+              autocomplete="current-password"
+              placeholder="Your password"
+              :value="password"
+              @ionInput="onPassword"
+            ></ion-input>
+          </ion-item>
+
+          <ion-button expand="block" color="primary" class="primary" @click="goIn">Sign in</ion-button>
+          <ion-button expand="block" fill="clear" color="primary" class="secondary" @click="goIn">Continue</ion-button>
+        </section>
+
+        <p class="footnote">Tip: hook this up to Supabase auth when you are ready.</p>
+      </div>
+    </ion-content>
+  </ion-page>
+</template>
+
+<script setup lang="ts">
+import {
+  IonButton,
+  IonContent,
+  IonInput,
+  IonItem,
+  IonLabel,
+  IonPage,
+} from '@ionic/vue';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+
+type IonInputEvent = CustomEvent<{ value?: string | null }>;
+
+const router = useRouter();
+
+const email = ref('');
+const password = ref('');
+
+function onEmail(ev: IonInputEvent) {
+  email.value = ev.detail.value ?? '';
+}
+
+function onPassword(ev: IonInputEvent) {
+  password.value = ev.detail.value ?? '';
+}
+
+function goIn() {
+  void router.push('/folder/Dashboard');
+}
+</script>
+
+<style scoped>
+.login-content {
+  --background:
+    radial-gradient(circle at top, rgba(203, 232, 195, 0.44), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(236, 199, 144, 0.22), transparent 30%),
+    linear-gradient(180deg, #f8f4ea 0%, #eef1e7 52%, #ecf0e3 100%);
+}
+
+.shell {
+  min-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  max-width: 520px;
+  margin: 0 auto;
+  padding: calc(48px + env(safe-area-inset-top)) 18px 40px;
+  display: grid;
+  gap: 18px;
+}
+
+.brand {
+  padding: 18px;
+  border-radius: 30px;
+  border: 1px solid rgba(72, 105, 76, 0.12);
+  background: rgba(255, 252, 246, 0.78);
+  box-shadow: 0 24px 55px rgba(53, 77, 49, 0.08);
+  backdrop-filter: blur(14px);
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  font-size: 0.74rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ion-color-primary);
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: clamp(2.1rem, 6vw, 3.2rem);
+  line-height: 0.95;
+  color: var(--ion-color-dark);
+}
+
+.subcopy {
+  margin: 12px 0 0;
+  line-height: 1.7;
+  color: var(--ion-color-medium);
+}
+
+.card {
+  padding: 18px;
+  border-radius: 30px;
+  border: 1px solid rgba(72, 105, 76, 0.12);
+  background: rgba(255, 252, 246, 0.86);
+  box-shadow: 0 24px 55px rgba(53, 77, 49, 0.08);
+  backdrop-filter: blur(14px);
+}
+
+.field {
+  --background: transparent;
+  --inner-padding-end: 0px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(72, 105, 76, 0.12);
+  background: rgba(72, 105, 76, 0.05);
+}
+
+.primary {
+  margin-top: 6px;
+}
+
+.secondary {
+  margin-top: 4px;
+}
+
+.footnote {
+  margin: 0;
+  color: var(--ion-color-medium);
+  text-align: center;
+}
+</style>

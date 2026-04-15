@@ -1,2 +1,90 @@
-/* For information on how to create your own theme, please refer to:
-http://ionicframework.com/docs/theming/ */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@600;700&display=swap');
+
+:root {
+  --ion-font-family: 'Plus Jakarta Sans', sans-serif;
+
+  --ion-color-primary: #48694c;
+  --ion-color-primary-rgb: 72, 105, 76;
+  --ion-color-primary-contrast: #f8f6ef;
+  --ion-color-primary-contrast-rgb: 248, 246, 239;
+  --ion-color-primary-shade: #3f5c43;
+  --ion-color-primary-tint: #5a795d;
+
+  --ion-color-secondary: #d99855;
+  --ion-color-secondary-rgb: 217, 152, 85;
+  --ion-color-secondary-contrast: #fffaf4;
+  --ion-color-secondary-contrast-rgb: 255, 250, 244;
+  --ion-color-secondary-shade: #bf864b;
+  --ion-color-secondary-tint: #dda267;
+
+  --ion-color-success: #739f64;
+  --ion-color-success-rgb: 115, 159, 100;
+  --ion-color-success-contrast: #f8f6ef;
+  --ion-color-success-contrast-rgb: 248, 246, 239;
+  --ion-color-success-shade: #658c58;
+  --ion-color-success-tint: #81a974;
+
+  --ion-color-warning: #b98547;
+  --ion-color-warning-rgb: 185, 133, 71;
+  --ion-color-warning-contrast: #fffaf4;
+  --ion-color-warning-contrast-rgb: 255, 250, 244;
+  --ion-color-warning-shade: #a3763f;
+  --ion-color-warning-tint: #c19359;
+
+  --ion-color-danger: #a3574e;
+  --ion-color-danger-rgb: 163, 87, 78;
+  --ion-color-danger-contrast: #fff8f6;
+  --ion-color-danger-contrast-rgb: 255, 248, 246;
+  --ion-color-danger-shade: #8f4d45;
+  --ion-color-danger-tint: #ad685f;
+
+  --ion-color-medium: #68786a;
+  --ion-color-medium-rgb: 104, 120, 106;
+  --ion-color-medium-contrast: #f8f6ef;
+  --ion-color-medium-contrast-rgb: 248, 246, 239;
+  --ion-color-medium-shade: #5c6a5e;
+  --ion-color-medium-tint: #778678;
+
+  --ion-color-dark: #213226;
+  --ion-color-dark-rgb: 33, 50, 38;
+  --ion-color-dark-contrast: #f8f6ef;
+  --ion-color-dark-contrast-rgb: 248, 246, 239;
+  --ion-color-dark-shade: #1d2c21;
+  --ion-color-dark-tint: #37483b;
+
+  --ion-background-color: #f3efe4;
+  --ion-background-color-rgb: 243, 239, 228;
+  --ion-text-color: #213226;
+  --ion-text-color-rgb: 33, 50, 38;
+
+  --ion-toolbar-background: rgba(248, 244, 234, 0.88);
+  --ion-item-background: transparent;
+  --ion-card-background: rgba(255, 252, 246, 0.84);
+  --ion-border-color: rgba(72, 105, 76, 0.14);
+}
+
+body,
+ion-app,
+ion-content {
+  color: var(--ion-text-color);
+}
+
+h1,
+h2,
+h3,
+.menu-brand h1 {
+  font-family: 'Cormorant Garamond', serif;
+  letter-spacing: -0.03em;
+}
+
+ion-button {
+  --border-radius: 999px;
+  font-weight: 700;
+  text-transform: none;
+}
+
+ion-badge {
+  border-radius: 999px;
+  padding: 10px 12px;
+  font-weight: 700;
+}

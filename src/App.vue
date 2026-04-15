@@ -1,32 +1,55 @@
 <template>
   <ion-app>
-    <ion-split-pane content-id="main-content">
+    <ion-split-pane v-if="showMenu" content-id="main-content" when="lg">
       <ion-menu content-id="main-content" type="overlay">
-        <ion-content>
-          <ion-list id="inbox-list">
-            <ion-list-header>Inbox</ion-list-header>
-            <ion-note>hi@ionicframework.com</ion-note>
+        <ion-content class="menu-content">
+          <div class="menu-shell">
+            <section class="menu-brand">
+              <p class="eyebrow">Neychurlava</p>
+              <h1>Rooted delivery operations</h1>
+              <p class="menu-copy">
+                Track orders, monitor riders, and review daily performance from one calm workspace.
+              </p>
+            </section>
 
-            <ion-menu-toggle :auto-hide="false" v-for="(p, i) in appPages" :key="i">
-              <ion-item @click="selectedIndex = i" router-direction="root" :router-link="p.url" lines="none" :detail="false" class="hydrated" :class="{ selected: selectedIndex === i }">
-                <ion-icon aria-hidden="true" slot="start" :ios="p.iosIcon" :md="p.mdIcon"></ion-icon>
-                <ion-label>{{ p.title }}</ion-label>
-              </ion-item>
-            </ion-menu-toggle>
-          </ion-list>
+            <div class="menu-summary">
+              <div>
+                <span>Active riders</span>
+                <strong>18</strong>
+              </div>
+              <div>
+                <span>On-time rate</span>
+                <strong>96%</strong>
+              </div>
+            </div>
 
-          <ion-list id="labels-list">
-            <ion-list-header>Labels</ion-list-header>
-
-            <ion-item v-for="(label, index) in labels" lines="none" :key="index">
-              <ion-icon aria-hidden="true" slot="start" :ios="bookmarkOutline" :md="bookmarkSharp"></ion-icon>
-              <ion-label>{{ label }}</ion-label>
-            </ion-item>
-          </ion-list>
+            <ion-list id="nav-list" lines="none">
+              <ion-menu-toggle :auto-hide="false" v-for="(page, index) in appPages" :key="page.title">
+                <ion-item
+                  button
+                  :router-link="page.url"
+                  router-direction="root"
+                  :detail="false"
+                  class="nav-item"
+                  :class="{ selected: selectedIndex === index }"
+                  @click="selectedIndex = index"
+                >
+                  <div class="nav-icon" slot="start">
+                    <ion-icon aria-hidden="true" :ios="page.iosIcon" :md="page.mdIcon"></ion-icon>
+                  </div>
+                  <ion-label>
+                    <span class="nav-label">{{ page.title }}</span>
+                    <small>{{ page.caption }}</small>
+                  </ion-label>
+                </ion-item>
+              </ion-menu-toggle>
+            </ion-list>
+          </div>
         </ion-content>
       </ion-menu>
       <ion-router-outlet id="main-content"></ion-router-outlet>
     </ion-split-pane>
+    <ion-router-outlet v-else id="main-content"></ion-router-outlet>
   </ion-app>
 </template>
 
@@ -38,196 +61,210 @@ import {
   IonItem,
   IonLabel,
   IonList,
-  IonListHeader,
   IonMenu,
   IonMenuToggle,
-  IonNote,
   IonRouterOutlet,
   IonSplitPane,
 } from '@ionic/vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import {
   archiveOutline,
   archiveSharp,
-  bookmarkOutline,
-  bookmarkSharp,
-  heartOutline,
-  heartSharp,
-  mailOutline,
-  mailSharp,
-  paperPlaneOutline,
-  paperPlaneSharp,
-  trashOutline,
-  trashSharp,
-  warningOutline,
-  warningSharp,
+  checkmarkDoneCircleOutline,
+  checkmarkDoneCircleSharp,
+  fastFoodOutline,
+  fastFoodSharp,
+  receiptOutline,
+  receiptSharp,
+  trendingUpOutline,
+  trendingUpSharp,
+  gridOutline,
+  gridSharp,
 } from 'ionicons/icons';
 
 const selectedIndex = ref(0);
+const route = useRoute();
+const showMenu = computed(() => route.path !== '/login');
 const appPages = [
   {
-    title: 'Inbox',
-    url: '/folder/Inbox',
-    iosIcon: mailOutline,
-    mdIcon: mailSharp,
+    title: 'Dashboard',
+    caption: 'Overview of key metrics',
+    url: '/folder/Dashboard',
+    iosIcon: gridOutline,
+    mdIcon: gridSharp,
   },
   {
-    title: 'Outbox',
-    url: '/folder/Outbox',
-    iosIcon: paperPlaneOutline,
-    mdIcon: paperPlaneSharp,
+    title: 'Orders',
+    caption: 'Live queue and rider load',
+    url: '/folder/Orders',
+    iosIcon: receiptOutline,
+    mdIcon: receiptSharp,
   },
   {
-    title: 'Favorites',
-    url: '/folder/Favorites',
-    iosIcon: heartOutline,
-    mdIcon: heartSharp,
+    title: 'Delivered Today',
+    caption: 'Completed drops and speed',
+    url: '/folder/Delivered_Today',
+    iosIcon: checkmarkDoneCircleOutline,
+    mdIcon: checkmarkDoneCircleSharp,
   },
   {
-    title: 'Archived',
-    url: '/folder/Archived',
+    title: 'Todays Product',
+    caption: 'Best-moving items today',
+    url: '/folder/Products',
+    iosIcon: fastFoodOutline,
+    mdIcon: fastFoodSharp,
+  },
+  {
+    title: 'Sales',
+    caption: 'Revenue and order trends',
+    url: '/folder/Sales',
+    iosIcon: trendingUpOutline,
+    mdIcon: trendingUpSharp,
+  },
+  {
+    title: 'History/Delivered',
+    caption: 'Past deliveries and logs',
+    url: '/folder/Delivered',
     iosIcon: archiveOutline,
     mdIcon: archiveSharp,
   },
-  {
-    title: 'Trash',
-    url: '/folder/Trash',
-    iosIcon: trashOutline,
-    mdIcon: trashSharp,
-  },
-  {
-    title: 'Spam',
-    url: '/folder/Spam',
-    iosIcon: warningOutline,
-    mdIcon: warningSharp,
-  },
 ];
-const labels = ['Family', 'Friends', 'Notes', 'Work', 'Travel', 'Reminders'];
-
 const path = window.location.pathname.split('folder/')[1];
 if (path !== undefined) {
-  selectedIndex.value = appPages.findIndex((page) => page.title.toLowerCase() === path.toLowerCase());
+  selectedIndex.value = appPages.findIndex((page) => page.url.endsWith(path));
 }
 </script>
 
 <style scoped>
-ion-menu ion-content {
-  --background: var(--ion-item-background, var(--ion-background-color, #fff));
+ion-menu {
+  --width: 330px;
+  --max-width: 88vw;
 }
 
-ion-menu.md ion-content {
-  --padding-start: 8px;
-  --padding-end: 8px;
-  --padding-top: 20px;
-  --padding-bottom: 20px;
+.menu-content {
+  --background: transparent;
 }
 
-ion-menu.md ion-list {
-  padding: 20px 0;
+.menu-shell {
+  min-height: 100%;
+  padding: 24px 18px 28px;
+  background:
+    radial-gradient(circle at top left, rgba(204, 232, 197, 0.72), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(236, 199, 144, 0.28), transparent 30%),
+    linear-gradient(180deg, rgba(248, 244, 234, 0.98), rgba(240, 236, 224, 0.98));
 }
 
-ion-menu.md ion-note {
-  margin-bottom: 30px;
+.menu-brand {
+  padding: 18px;
+  border: 1px solid rgba(64, 93, 72, 0.12);
+  border-radius: 28px;
+  background: rgba(255, 252, 245, 0.72);
+  box-shadow: 0 20px 45px rgba(59, 82, 55, 0.08);
+  backdrop-filter: blur(12px);
 }
 
-ion-menu.md ion-list-header,
-ion-menu.md ion-note {
-  padding-left: 10px;
+.eyebrow {
+  margin: 0 0 10px;
+  font-size: 0.74rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ion-color-primary);
 }
 
-ion-menu.md ion-list#inbox-list {
-  border-bottom: 1px solid var(--ion-background-color-step-150, #d7d8da);
+.menu-brand h1 {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--ion-color-dark);
 }
 
-ion-menu.md ion-list#inbox-list ion-list-header {
-  font-size: 22px;
-  font-weight: 600;
-
-  min-height: 20px;
+.menu-copy {
+  margin: 12px 0 0;
+  color: var(--ion-color-medium);
+  line-height: 1.5;
 }
 
-ion-menu.md ion-list#labels-list ion-list-header {
-  font-size: 16px;
-
-  margin-bottom: 18px;
-
-  color: #757575;
-
-  min-height: 26px;
+.menu-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0 12px;
 }
 
-ion-menu.md ion-item {
+.menu-summary div {
+  padding: 14px 16px;
+  border-radius: 22px;
+  background: rgba(72, 105, 76, 0.08);
+  border: 1px solid rgba(72, 105, 76, 0.12);
+}
+
+.menu-summary span,
+.nav-item small {
+  display: block;
+  color: var(--ion-color-medium);
+}
+
+.menu-summary strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1.4rem;
+  color: var(--ion-color-dark);
+}
+
+#nav-list {
+  margin-top: 10px;
+  background: transparent;
+}
+
+.nav-item {
+  --background: transparent;
   --padding-start: 10px;
   --padding-end: 10px;
-  border-radius: 4px;
+  --inner-padding-end: 8px;
+  --border-radius: 22px;
+  margin-bottom: 10px;
 }
 
-ion-menu.md ion-item.selected {
+.nav-item.selected {
   --background: rgba(var(--ion-color-primary-rgb), 0.14);
+  box-shadow: inset 0 0 0 1px rgba(72, 105, 76, 0.1);
 }
 
-ion-menu.md ion-item.selected ion-icon {
+.nav-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin-right: 12px;
+  border-radius: 16px;
+  background: rgba(72, 105, 76, 0.1);
   color: var(--ion-color-primary);
 }
 
-ion-menu.md ion-item ion-icon {
-  color: #616e7e;
+.nav-label {
+  display: block;
+  margin-bottom: 3px;
+  font-weight: 700;
+  color: var(--ion-color-dark);
 }
 
-ion-menu.md ion-item ion-label {
-  font-weight: 500;
+.nav-item.selected .nav-icon {
+  background: var(--ion-color-primary);
+  color: #f8f6ef;
 }
 
-ion-menu.ios ion-content {
-  --padding-bottom: 20px;
-}
+@media (max-width: 991px) {
+  ion-menu {
+    --width: 294px;
+  }
 
-ion-menu.ios ion-list {
-  padding: 20px 0 0 0;
-}
+  .menu-shell {
+    padding-top: 18px;
+  }
 
-ion-menu.ios ion-note {
-  line-height: 24px;
-  margin-bottom: 20px;
-}
-
-ion-menu.ios ion-item {
-  --padding-start: 16px;
-  --padding-end: 16px;
-  --min-height: 50px;
-}
-
-ion-menu.ios ion-item.selected ion-icon {
-  color: var(--ion-color-primary);
-}
-
-ion-menu.ios ion-item ion-icon {
-  font-size: 24px;
-  color: #73849a;
-}
-
-ion-menu.ios ion-list#labels-list ion-list-header {
-  margin-bottom: 8px;
-}
-
-ion-menu.ios ion-list-header,
-ion-menu.ios ion-note {
-  padding-left: 16px;
-  padding-right: 16px;
-}
-
-ion-menu.ios ion-note {
-  margin-bottom: 8px;
-}
-
-ion-note {
-  display: inline-block;
-  font-size: 16px;
-
-  color: var(--ion-color-medium-shade);
-}
-
-ion-item.selected {
-  --color: var(--ion-color-primary);
+  .menu-brand h1 {
+    font-size: 1.8rem;
+  }
 }
 </style>

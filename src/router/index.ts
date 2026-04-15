@@ -4,12 +4,36 @@ import { RouteRecordRaw } from 'vue-router';
 const routes: Array<RouteRecordRaw> = [
   {
     path: '',
-    redirect: '/folder/Inbox'
+    redirect: '/login'
   },
   {
-    path: '/folder/:id',
-    component: () => import ('../views/FolderPage.vue')
-  }
+    path: '/login',
+    component: () => import ('../views/Login.vue')
+  },
+  {
+    path: '/folder/Dashboard',
+    component: () => import ('../views/Dashboard.vue')
+  },
+  {
+    path: '/folder/Orders',
+    component: () => import ('../views/Orders.vue')
+  },
+  {
+    path: '/folder/Delivered_Today',
+    component: () => import ('../views/Delivered.vue')
+  },
+  {
+    path: '/folder/Products',
+    component: () => import ('../views/Product.vue')
+  },
+  {
+    path: '/folder/Sales',
+    component: () => import ('../views/Sales.vue')
+  },
+  {
+    path: '/folder/Delivered',
+    component: () => import ('../views/Delivered.vue')
+  },
 ]
 
 const router = createRouter({
