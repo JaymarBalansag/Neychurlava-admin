@@ -10,9 +10,6 @@
           <ion-button fill="clear" class="icon-chip" :disabled="loading" @click="fetchProducts({ reset: true })">
             <ion-icon :icon="refreshOutline"></ion-icon>
           </ion-button>
-          <ion-button fill="clear" class="icon-chip" @click="openCreate">
-            <ion-icon :icon="addOutline"></ion-icon>
-          </ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
@@ -105,6 +102,12 @@
         </ion-list>
       </div>
 
+      <ion-fab slot="fixed" vertical="bottom" horizontal="end" class="add-fab">
+        <ion-fab-button color="primary" @click="openCreate">
+          <ion-icon :icon="addOutline"></ion-icon>
+        </ion-fab-button>
+      </ion-fab>
+
       <ion-modal :is-open="editorOpen" :initial-breakpoint="0.92" :breakpoints="[0, 0.6, 0.92]" @didDismiss="closeEditor">
         <ion-header class="modal-header">
           <ion-toolbar>
@@ -128,10 +131,31 @@
               <ion-input inputmode="decimal" :value="String(form.price)" @ionInput="onFormPrice" placeholder="0"></ion-input>
             </ion-item>
 
-            <ion-item lines="none" class="field">
-              <ion-label position="stacked">Image URL</ion-label>
-              <ion-input :value="form.image_url" @ionInput="onFormImage" placeholder="https://..."></ion-input>
-            </ion-item>
+            <section class="upload-card">
+              <p class="upload-title">Image</p>
+              <p class="upload-copy">Upload an image and we will save its URL into <code>image_url</code>.</p>
+
+              <div v-if="imagePreviewUrl || form.image_url" class="upload-preview">
+                <ion-img :src="imagePreviewUrl || form.image_url" :alt="form.name || 'Product image'"></ion-img>
+              </div>
+
+              <input
+                ref="fileInput"
+                type="file"
+                accept="image/*"
+                class="file-input"
+                @change="onFileChange"
+              />
+
+              <div class="upload-actions">
+                <ion-button fill="outline" color="primary" :disabled="saving" @click="triggerFilePick">
+                  Choose image
+                </ion-button>
+                <ion-button fill="clear" color="danger" :disabled="saving || (!selectedImageFile && !imagePreviewUrl)" @click="clearSelectedImage">
+                  Clear
+                </ion-button>
+              </div>
+            </section>
 
             <div class="field toggle-field">
               <ion-toggle :checked="Boolean(form.is_available)" @ionChange="onFormAvailable"></ion-toggle>
@@ -196,6 +220,8 @@ import {
   IonButton,
   IonButtons,
   IonContent,
+  IonFab,
+  IonFabButton,
   IonHeader,
   IonIcon,
   IonImg,
@@ -373,16 +399,42 @@ function onFormPrice(ev: IonInputEvent) {
   const n = Number(raw);
   form.value.price = Number.isFinite(n) ? n : 0;
 }
-function onFormImage(ev: IonInputEvent) {
-  form.value.image_url = ev.detail.value ?? '';
-}
 function onFormAvailable(ev: ToggleEvent) {
   form.value.is_available = Boolean(ev.detail.checked);
+}
+
+const PRODUCT_IMAGE_BUCKET = 'product-images';
+
+const fileInput = ref<HTMLInputElement | null>(null);
+const selectedImageFile = ref<File | null>(null);
+const imagePreviewUrl = ref<string>('');
+
+function triggerFilePick() {
+  fileInput.value?.click();
+}
+
+function clearSelectedImage() {
+  selectedImageFile.value = null;
+  if (imagePreviewUrl.value) URL.revokeObjectURL(imagePreviewUrl.value);
+  imagePreviewUrl.value = '';
+}
+
+function onFileChange(ev: Event) {
+  const input = ev.target as HTMLInputElement;
+  const file = input.files?.[0] ?? null;
+  selectedImageFile.value = file;
+
+  if (imagePreviewUrl.value) URL.revokeObjectURL(imagePreviewUrl.value);
+  imagePreviewUrl.value = file ? URL.createObjectURL(file) : '';
+
+  // Allow picking the same file again.
+  input.value = '';
 }
 
 function openCreate() {
   editorMode.value = 'create';
   editorError.value = '';
+  clearSelectedImage();
   form.value = { id: null, name: '', price: 0, image_url: '', is_available: true };
   editorOpen.value = true;
 }
@@ -390,6 +442,7 @@ function openCreate() {
 function openEdit(p: ProductRow) {
   editorMode.value = 'edit';
   editorError.value = '';
+  clearSelectedImage();
   form.value = {
     id: p.id,
     name: p.name ?? '',
@@ -401,7 +454,29 @@ function openEdit(p: ProductRow) {
 }
 
 function closeEditor() {
+  clearSelectedImage();
   editorOpen.value = false;
+}
+
+function safeFilename(name: string) {
+  return name.replace(/[^a-zA-Z0-9._-]/g, '_');
+}
+
+async function uploadSelectedImage(): Promise<string | null> {
+  if (!selectedImageFile.value) return null;
+
+  const file = selectedImageFile.value;
+  const nonce = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const path = `products/${nonce}-${safeFilename(file.name)}`;
+
+  const { error } = await supabase.storage
+    .from(PRODUCT_IMAGE_BUCKET)
+    .upload(path, file, { upsert: true, contentType: file.type || undefined });
+
+  if (error) throw error;
+
+  const { data } = supabase.storage.from(PRODUCT_IMAGE_BUCKET).getPublicUrl(path);
+  return data.publicUrl ?? null;
 }
 
 async function saveProduct() {
@@ -416,10 +491,11 @@ async function saveProduct() {
 
   saving.value = true;
   try {
+    const uploadedUrl = await uploadSelectedImage();
     const payload = {
       name,
       price: Number(form.value.price ?? 0),
-      image_url: form.value.image_url?.trim() || null,
+      image_url: (uploadedUrl ?? form.value.image_url?.trim()) || null,
       is_available: Boolean(form.value.is_available),
     };
 
@@ -432,6 +508,7 @@ async function saveProduct() {
     }
 
     editorOpen.value = false;
+    clearSelectedImage();
     await fetchProducts({ reset: true });
   } catch (err) {
     editorError.value = err instanceof Error ? err.message : 'Failed to save product.';
@@ -507,6 +584,10 @@ onBeforeUnmount(() => {
 .icon-chip {
   --border-radius: 999px;
   --color: var(--ion-color-primary);
+}
+
+.add-fab ion-fab-button {
+  --box-shadow: 0 18px 40px rgba(53, 77, 49, 0.22);
 }
 
 .page-content {
@@ -721,6 +802,58 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
+}
+
+.upload-card {
+  border: 1px solid rgba(72, 105, 76, 0.12);
+  border-radius: 22px;
+  padding: 14px;
+  background: rgba(72, 105, 76, 0.04);
+  margin-bottom: 12px;
+}
+
+.upload-title {
+  margin: 0;
+  font-weight: 900;
+  color: var(--ion-color-dark);
+}
+
+.upload-copy {
+  margin: 8px 0 0;
+  color: var(--ion-color-medium);
+  line-height: 1.6;
+}
+
+.upload-copy code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-size: 0.92em;
+}
+
+.upload-preview {
+  margin-top: 12px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(72, 105, 76, 0.12);
+  background: rgba(255, 252, 246, 0.92);
+}
+
+.file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.upload-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
 }
 
 .info-card {
