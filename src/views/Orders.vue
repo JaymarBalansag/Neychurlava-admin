@@ -73,7 +73,6 @@
             button
             :detail="false"
             class="row"
-            @click="toggleExpanded(order.id)"
           >
             <ion-label>
               <strong>Order #{{ order.id }}</strong>
@@ -87,6 +86,17 @@
               <ion-badge :color="badgeColor(order.status)">{{ normalizeStatus(order.status) }}</ion-badge>
               <small>{{ formatCurrency(order.total_price) }}</small>
 
+              <ion-button
+                fill="clear"
+                color="primary"
+                class="view-items"
+                size="small"
+                @click.stop="openItemsModal(order.id)"
+              >
+                <ion-icon :icon="eyeOutline" slot="start"></ion-icon>
+                View items
+              </ion-button>
+
               <ion-select
                 class="status"
                 interface="popover"
@@ -95,31 +105,13 @@
                 :disabled="updatingId === order.id"
                 @ionChange="(ev) => onStatusChange(order.id, ev)"
               >
+                <ion-select-option value="pending">pending</ion-select-option>
                 <ion-select-option value="preparing">preparing</ion-select-option>
                 <ion-select-option value="delivering">delivering</ion-select-option>
                 <ion-select-option value="delivered">delivered</ion-select-option>
               </ion-select>
             </div>
           </ion-item>
-
-          <div v-if="expandedId && itemsByOrderId[expandedId]" class="items-shell">
-            <div class="items-title">Order items</div>
-            <div
-              v-for="it in itemsByOrderId[expandedId]"
-              :key="it.id"
-              class="item-row"
-            >
-              <div class="item-left">
-                <strong>{{ it.product?.name ?? `Product ${it.product_id}` }}</strong>
-                <p class="item-meta">
-                  Qty {{ it.quantity }} - Unit {{ formatCurrency(it.unit_price) }}
-                </p>
-              </div>
-              <div class="item-right">
-                <small>{{ formatCurrency(it.quantity * it.unit_price) }}</small>
-              </div>
-            </div>
-          </div>
 
           <div v-if="!loading && visibleOrders.length === 0" class="empty">
             No {{ normalizeStatus(statusFilter) }} orders right now.
@@ -140,6 +132,81 @@
             </small>
           </div>
         </ion-list>
+
+        <ion-modal
+          :is-open="itemsModalOpen"
+          :initial-breakpoint="0.92"
+          :breakpoints="[0, 0.6, 0.92]"
+          @didDismiss="closeItemsModal"
+        >
+          <ion-header class="modal-header">
+            <ion-toolbar>
+              <ion-title>Order Details</ion-title>
+              <ion-buttons slot="end">
+                <ion-button fill="clear" @click="closeItemsModal">Close</ion-button>
+              </ion-buttons>
+            </ion-toolbar>
+          </ion-header>
+
+          <ion-content class="modal-content">
+            <div class="modal-shell">
+              <section class="summary-card">
+                <p class="eyebrow">Order</p>
+                <h2>Order #{{ activeOrder?.id ?? activeOrderId }}</h2>
+                <p class="summary-meta">
+                  <span>User: <strong>{{ activeOrder?.user_id ?? '-' }}</strong></span>
+                  <span>Created: <strong>{{ activeOrder?.created_at ? formatDate(activeOrder.created_at) : '-' }}</strong></span>
+                </p>
+                <div class="summary-row">
+                  <ion-badge :color="badgeColor((activeOrder?.status ?? statusFilter) as any)">
+                    {{ normalizeStatus((activeOrder?.status ?? statusFilter) as any) }}
+                  </ion-badge>
+                  <strong class="total">{{ activeOrder ? formatCurrency(activeOrder.total_price) : '-' }}</strong>
+                </div>
+              </section>
+
+              <section class="location-card">
+                <p class="eyebrow">Location</p>
+                <p class="location-copy">Placeholder: show user location, map, and delivery notes here.</p>
+              </section>
+
+              <section class="items-card">
+                <div class="items-title">Items</div>
+
+                <div v-if="itemsLoading" class="loading">
+                  <ion-spinner name="crescent"></ion-spinner>
+                  <span>Loading items...</span>
+                </div>
+
+                <div v-else-if="activeItems && activeItems.length > 0">
+                  <div v-for="it in activeItems" :key="it.id" class="item-row">
+                    <ion-thumbnail class="thumb" v-if="productImageUrl(it)">
+                      <ion-img :src="productImageUrl(it) ?? undefined" :alt="it.product?.name ?? 'Product image'"></ion-img>
+                    </ion-thumbnail>
+
+                    <div class="item-left">
+                      <div class="item-top">
+                        <strong>{{ it.product?.name ?? `Product ${it.product_id}` }}</strong>
+                        <ion-badge :color="availabilityColor(it)">{{ availabilityLabel(it) }}</ion-badge>
+                      </div>
+                      <p class="item-meta">
+                        Price {{ formatCurrency(productPrice(it)) }} • Qty {{ it.quantity }}
+                      </p>
+                    </div>
+
+                    <div class="item-right">
+                      <small>{{ formatCurrency(it.quantity * productPrice(it)) }}</small>
+                    </div>
+                  </div>
+                </div>
+
+                <div v-else class="empty">
+                  No items found for this order.
+                </div>
+              </section>
+            </div>
+          </ion-content>
+        </ion-modal>
       </div>
     </ion-content>
   </ion-page>
@@ -153,19 +220,22 @@ import {
   IonContent,
   IonHeader,
   IonIcon,
+  IonImg,
   IonItem,
   IonLabel,
   IonList,
   IonMenuButton,
+  IonModal,
   IonPage,
   IonSearchbar,
   IonSelect,
   IonSelectOption,
   IonSpinner,
+  IonThumbnail,
   IonTitle,
   IonToolbar,
 } from '@ionic/vue';
-import { refreshOutline } from 'ionicons/icons';
+import { eyeOutline, refreshOutline } from 'ionicons/icons';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { supabase } from '../supabase';
 import { useAuth } from '../auth';
@@ -189,8 +259,8 @@ const updatingId = ref<string | number | null>(null);
 type Product = {
   name: string;
   price: number;
-  status: string;
   image_url: string | null;
+  is_available: boolean;
   created_at: string;
 };
 
@@ -205,8 +275,10 @@ type OrderItem = {
 };
 
 const orders = ref<Order[]>([]);
-const expandedId = ref<string | number | null>(null);
 const itemsByOrderId = ref<Record<string, OrderItem[]>>({});
+const itemsModalOpen = ref(false);
+const activeOrderId = ref<string | number | null>(null);
+const itemsLoading = ref(false);
 
 const channel = supabase.channel('orders-admin-pending');
 
@@ -333,11 +405,12 @@ async function fetchOrderItems(orderId: string | number) {
   const key = String(orderId);
   if (itemsByOrderId.value[key]) return;
 
+  itemsLoading.value = true;
   try {
     // Try to join products via FK relationship: order_items.product_id -> products.id
     const { data, error } = await supabase
       .from('order_items')
-      .select('id,order_id,product_id,quantity,unit_price,created_at,products(name,price,status,image_url,created_at)')
+      .select('id,order_id,product_id,quantity,unit_price,created_at,products(name,price,image_url,is_available,created_at)')
       .eq('order_id', orderId)
       .order('created_at', { ascending: true });
 
@@ -357,13 +430,36 @@ async function fetchOrderItems(orderId: string | number) {
   } catch (err) {
     // Keep UI usable even if relation names differ in DB; show a lightweight error.
     errorMsg.value = err instanceof Error ? err.message : 'Failed to load order items.';
+  } finally {
+    itemsLoading.value = false;
   }
 }
 
-function toggleExpanded(orderId: string | number) {
-  const next = expandedId.value === orderId ? null : orderId;
-  expandedId.value = next;
-  if (next != null) void fetchOrderItems(next);
+function openItemsModal(orderId: string | number) {
+  activeOrderId.value = orderId;
+  itemsModalOpen.value = true;
+  void fetchOrderItems(orderId);
+}
+
+function closeItemsModal() {
+  itemsModalOpen.value = false;
+}
+
+function productImageUrl(item: OrderItem) {
+  const url = item.product?.image_url;
+  return url && url.trim().length ? url : null;
+}
+
+function productPrice(item: OrderItem) {
+  return typeof item.product?.price === 'number' ? item.product.price : item.unit_price;
+}
+
+function availabilityColor(item: OrderItem) {
+  return item.product?.is_available ? 'success' : 'warning';
+}
+
+function availabilityLabel(item: OrderItem) {
+  return item.product?.is_available ? 'available' : 'unavailable';
 }
 
 type IonSelectChangeEvent = CustomEvent<{ value: string }>;
@@ -380,6 +476,9 @@ async function onStatusChange(orderId: string | number, ev: IonSelectChangeEvent
   const shouldRemove = normalizeStatus(next) !== normalizeStatus(statusFilter.value);
   if (shouldRemove) {
     orders.value = orders.value.filter((o) => o.id !== orderId);
+  } else {
+    // Otherwise, optimistically update the row in place.
+    orders.value = orders.value.map((o) => (String(o.id) === String(orderId) ? { ...o, status: next } : o));
   }
 
   try {
@@ -424,6 +523,16 @@ function upsertFilteredOrder(newOrder: any) {
 function removeOrder(orderId: any) {
   orders.value = orders.value.filter((o) => String(o.id) !== String(orderId));
 }
+
+const activeOrder = computed(() => {
+  if (activeOrderId.value == null) return null;
+  return orders.value.find((o) => String(o.id) === String(activeOrderId.value)) ?? null;
+});
+
+const activeItems = computed(() => {
+  if (activeOrderId.value == null) return null;
+  return itemsByOrderId.value[String(activeOrderId.value)] ?? null;
+});
 
 const visibleOrders = computed(() => {
   const q = query.value.trim().toLowerCase();
@@ -639,12 +748,14 @@ onBeforeUnmount(() => {
   text-transform: lowercase;
 }
 
+.view-items {
+  --border-radius: 999px;
+  font-weight: 800;
+  text-transform: none;
+}
+
 .items-shell {
-  margin: 10px 10px 16px;
-  padding: 14px;
-  border-radius: 22px;
-  border: 1px solid rgba(72, 105, 76, 0.12);
-  background: rgba(255, 252, 246, 0.84);
+  display: none;
 }
 
 .items-title {
@@ -664,8 +775,26 @@ onBeforeUnmount(() => {
   margin-bottom: 10px;
 }
 
+.thumb {
+  --size: 56px;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  overflow: hidden;
+  flex: 0 0 auto;
+  border: 1px solid rgba(72, 105, 76, 0.12);
+  background: rgba(255, 252, 246, 0.92);
+}
+
 .item-row:last-child {
   margin-bottom: 0;
+}
+
+.item-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .item-meta {
@@ -689,6 +818,67 @@ onBeforeUnmount(() => {
   margin-top: 8px;
   font-weight: 600;
   line-height: 1.4;
+}
+
+.modal-header ion-toolbar {
+  --background: rgba(248, 244, 234, 0.9);
+  --border-color: transparent;
+  backdrop-filter: blur(14px);
+}
+
+.modal-content {
+  --background:
+    radial-gradient(circle at top, rgba(203, 232, 195, 0.24), transparent 26%),
+    linear-gradient(180deg, #f8f4ea 0%, #eef1e7 52%, #ecf0e3 100%);
+}
+
+.modal-shell {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 18px 16px 28px;
+  display: grid;
+  gap: 14px;
+}
+
+.summary-card,
+.items-card,
+.location-card {
+  border: 1px solid rgba(72, 105, 76, 0.12);
+  background: rgba(255, 252, 246, 0.86);
+  box-shadow: 0 24px 55px rgba(53, 77, 49, 0.08);
+  backdrop-filter: blur(14px);
+  border-radius: 26px;
+  padding: 16px;
+}
+
+.summary-card h2 {
+  margin: 0;
+  color: var(--ion-color-dark);
+}
+
+.summary-meta {
+  margin: 10px 0 0;
+  display: grid;
+  gap: 6px;
+  color: var(--ion-color-medium);
+}
+
+.summary-row {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.total {
+  color: var(--ion-color-dark);
+}
+
+.location-copy {
+  margin: 0;
+  color: var(--ion-color-medium);
+  line-height: 1.6;
 }
 
 @media (max-width: 767px) {

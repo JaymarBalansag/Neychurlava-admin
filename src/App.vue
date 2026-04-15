@@ -116,13 +116,13 @@ const appPages = [
     iosIcon: receiptOutline,
     mdIcon: receiptSharp,
   },
-  {
-    title: 'Delivered Today',
-    caption: 'Completed drops and speed',
-    url: '/folder/Delivered_Today',
-    iosIcon: checkmarkDoneCircleOutline,
-    mdIcon: checkmarkDoneCircleSharp,
-  },
+  // {
+  //   title: 'Delivered Today',
+  //   caption: 'Completed drops and speed',
+  //   url: '/folder/Delivered_Today',
+  //   iosIcon: checkmarkDoneCircleOutline,
+  //   mdIcon: checkmarkDoneCircleSharp,
+  // },
   {
     title: 'Todays Product',
     caption: 'Best-moving items today',
@@ -137,13 +137,13 @@ const appPages = [
     iosIcon: trendingUpOutline,
     mdIcon: trendingUpSharp,
   },
-  {
-    title: 'History/Delivered',
-    caption: 'Past deliveries and logs',
-    url: '/folder/Delivered',
-    iosIcon: archiveOutline,
-    mdIcon: archiveSharp,
-  },
+  // {
+  //   title: 'History/Delivered',
+  //   caption: 'Past deliveries and logs',
+  //   url: '/folder/Delivered',
+  //   iosIcon: archiveOutline,
+  //   mdIcon: archiveSharp,
+  // },
 ];
 const path = window.location.pathname.split('folder/')[1];
 if (path !== undefined) {
