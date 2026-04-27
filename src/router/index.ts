@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router';
 import { RouteRecordRaw } from 'vue-router';
-import { initAuth, useAuth } from '../auth';
+import { initAuth, useAuth, waitForRole } from '../auth';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -44,8 +44,10 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   await initAuth();
+  await waitForRole();
   const { session } = useAuth();
   const authed = Boolean(session.value);
+  const { isAdmin } = useAuth();
 
   if (to.path === '/login' && authed) {
     return '/folder/Dashboard';
@@ -53,6 +55,10 @@ router.beforeEach(async (to) => {
 
   if (to.path.startsWith('/folder') && !authed) {
     return '/login';
+  }
+
+  if (to.path.startsWith('/folder') && authed && !isAdmin.value) {
+    return { path: '/login', query: { reason: 'not_admin' } };
   }
 
   return true;
