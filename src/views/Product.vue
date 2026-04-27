@@ -65,6 +65,7 @@
               </div>
               <p class="meta">
                 <span>{{ formatCurrency(p.price) }}</span>
+                <span v-if="p.is_allowed_half && p.half_price !== null">Half: {{ formatCurrency(p.half_price) }}</span>
                 <span v-if="p.created_at">Created: {{ formatDate(p.created_at) }}</span>
               </p>
             </ion-label>
@@ -131,6 +132,21 @@
               <ion-input inputmode="decimal" :value="String(form.price)" @ionInput="onFormPrice" placeholder="0"></ion-input>
             </ion-item>
 
+            <div class="field toggle-field">
+              <ion-toggle :checked="Boolean(form.is_allowed_half)" @ionChange="onFormAllowedHalf"></ion-toggle>
+              <span>Allow half order</span>
+            </div>
+
+            <ion-item v-if="form.is_allowed_half" lines="none" class="field">
+              <ion-label position="stacked">Half price</ion-label>
+              <ion-input
+                inputmode="decimal"
+                :value="form.half_price === null ? '' : String(form.half_price)"
+                @ionInput="onFormHalfPrice"
+                placeholder="0"
+              ></ion-input>
+            </ion-item>
+
             <section class="upload-card">
               <p class="upload-title">Image</p>
               <p class="upload-copy">Upload an image and we will save its URL into <code>image_url</code>.</p>
@@ -187,7 +203,12 @@
                 <ion-badge :color="activeProduct.is_available ? 'success' : 'warning'">
                   {{ activeProduct.is_available ? 'available' : 'unavailable' }}
                 </ion-badge>
-                <strong class="price">{{ formatCurrency(activeProduct.price) }}</strong>
+                <div class="prices">
+                  <strong class="price">{{ formatCurrency(activeProduct.price) }}</strong>
+                  <small v-if="activeProduct.is_allowed_half && activeProduct.half_price !== null" class="half-price">
+                    Half: {{ formatCurrency(activeProduct.half_price) }}
+                  </small>
+                </div>
               </div>
 
               <p class="info-meta">
@@ -250,6 +271,8 @@ type ProductRow = {
   id: string | number;
   name: string;
   price: number;
+  is_allowed_half: boolean;
+  half_price: number | null;
   image_url: string | null;
   is_available: boolean;
   created_at: string | null;
@@ -307,7 +330,7 @@ async function fetchProducts(opts: { reset: boolean }) {
     // NOTE: this assumes `products` has `is_available` boolean column.
     let q = supabase
       .from('products')
-      .select('id,name,price,image_url,is_available,created_at', { count: 'exact' })
+      .select('id,name,price,is_allowed_half,half_price,image_url,is_available,created_at', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(from, to);
 
@@ -385,6 +408,8 @@ const form = ref({
   id: null as string | number | null,
   name: '',
   price: 0,
+  is_allowed_half: false,
+  half_price: null as number | null,
   image_url: '',
   is_available: true,
 });
@@ -398,6 +423,20 @@ function onFormPrice(ev: IonInputEvent) {
   const raw = ev.detail.value ?? '';
   const n = Number(raw);
   form.value.price = Number.isFinite(n) ? n : 0;
+}
+function onFormAllowedHalf(ev: ToggleEvent) {
+  const allowed = Boolean(ev.detail.checked);
+  form.value.is_allowed_half = allowed;
+  if (!allowed) form.value.half_price = null;
+}
+function onFormHalfPrice(ev: IonInputEvent) {
+  const raw = (ev.detail.value ?? '').toString().trim();
+  if (!raw) {
+    form.value.half_price = null;
+    return;
+  }
+  const n = Number(raw);
+  form.value.half_price = Number.isFinite(n) ? n : null;
 }
 function onFormAvailable(ev: ToggleEvent) {
   form.value.is_available = Boolean(ev.detail.checked);
@@ -435,7 +474,15 @@ function openCreate() {
   editorMode.value = 'create';
   editorError.value = '';
   clearSelectedImage();
-  form.value = { id: null, name: '', price: 0, image_url: '', is_available: true };
+  form.value = {
+    id: null,
+    name: '',
+    price: 0,
+    is_allowed_half: false,
+    half_price: null,
+    image_url: '',
+    is_available: true,
+  };
   editorOpen.value = true;
 }
 
@@ -447,6 +494,8 @@ function openEdit(p: ProductRow) {
     id: p.id,
     name: p.name ?? '',
     price: Number(p.price ?? 0),
+    is_allowed_half: Boolean(p.is_allowed_half),
+    half_price: p.half_price === null ? null : Number(p.half_price),
     image_url: p.image_url ?? '',
     is_available: Boolean(p.is_available),
   };
@@ -489,12 +538,22 @@ async function saveProduct() {
     return;
   }
 
+  if (form.value.is_allowed_half) {
+    const hp = form.value.half_price;
+    if (hp === null || !Number.isFinite(hp) || hp <= 0) {
+      editorError.value = 'Half price is required when half orders are allowed.';
+      return;
+    }
+  }
+
   saving.value = true;
   try {
     const uploadedUrl = await uploadSelectedImage();
     const payload = {
       name,
       price: Number(form.value.price ?? 0),
+      is_allowed_half: Boolean(form.value.is_allowed_half),
+      half_price: form.value.is_allowed_half ? Number(form.value.half_price) : null,
       image_url: (uploadedUrl ?? form.value.image_url?.trim()) || null,
       is_available: Boolean(form.value.is_available),
     };
@@ -880,6 +939,19 @@ onBeforeUnmount(() => {
 
 .price {
   color: var(--ion-color-dark);
+}
+
+.prices {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.15;
+}
+
+.half-price {
+  margin-top: 2px;
+  color: var(--ion-color-medium);
+  font-weight: 600;
 }
 
 .info-meta {
