@@ -285,7 +285,8 @@ const channel = supabase.channel('orders-admin-pending');
 const { user } = useAuth();
 const signedInAs = computed(() => user.value?.email ?? user.value?.id ?? 'unknown');
 const emptyHint = computed(() => {
-  return "If you know there are pending orders, this is usually RLS filtering rows. Add a SELECT policy for admin on the 'orders' table, and make sure status values match 'pending'.";
+  return "must've been the wind";
+  // return "If you know there are pending orders, this is usually RLS filtering rows. Add a SELECT policy for admin on the 'orders' table, and make sure status values match 'pending'.";
 });
 
 const PAGE_SIZE = 20;
