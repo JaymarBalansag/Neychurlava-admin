@@ -15,11 +15,11 @@
             <div class="menu-summary">
               <div>
                 <span>Delivered Today</span>
-                <strong>18</strong>
+                <strong>{{ deliveredToday }}</strong>
               </div>
               <div>
                 <span>Pending Orders</span>
-                <strong>3</strong>
+                <strong>{{ pendingOrders }}</strong>
               </div>
             </div>
 
@@ -78,8 +78,8 @@ import {
   IonRouterOutlet,
   IonSplitPane,
 } from '@ionic/vue';
-import { computed, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+ import { computed, ref } from 'vue';
+ import { useRoute, useRouter } from 'vue-router';
 import {
   archiveOutline,
   archiveSharp,
@@ -95,12 +95,14 @@ import {
   gridSharp,
   logOutOutline,
 } from 'ionicons/icons';
-import { supabase } from './supabase';
+ import { supabase } from './supabase';
+ import { useLiveOrderStats } from './liveOrderStats';
 
 const selectedIndex = ref(0);
 const route = useRoute();
 const router = useRouter();
 const showMenu = computed(() => route.path !== '/login');
+const { deliveredToday, pendingOrders } = useLiveOrderStats();
 const appPages = [
   {
     title: 'Dashboard',
