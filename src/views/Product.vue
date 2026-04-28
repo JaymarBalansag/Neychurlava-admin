@@ -442,11 +442,48 @@ function onFormAvailable(ev: ToggleEvent) {
   form.value.is_available = Boolean(ev.detail.checked);
 }
 
-const PRODUCT_IMAGE_BUCKET = 'product-images';
+const PRODUCT_IMAGE_BUCKET = 'product_images';
 
 const fileInput = ref<HTMLInputElement | null>(null);
 const selectedImageFile = ref<File | null>(null);
 const imagePreviewUrl = ref<string>('');
+
+async function compressImageToWebp(input: File, opts?: { maxDim?: number; quality?: number }): Promise<File> {
+  const maxDim = opts?.maxDim ?? 1400;
+  const quality = opts?.quality ?? 0.8;
+
+  if (!input.type.startsWith('image/')) return input;
+
+  try {
+    const bitmap = await createImageBitmap(input);
+
+    const width = bitmap.width;
+    const height = bitmap.height;
+    const scale = Math.min(1, maxDim / Math.max(width, height));
+    const outW = Math.max(1, Math.round(width * scale));
+    const outH = Math.max(1, Math.round(height * scale));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = outW;
+    canvas.height = outH;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return input;
+
+    ctx.drawImage(bitmap, 0, 0, outW, outH);
+
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/webp', quality));
+    if (!blob) return input;
+
+    // If conversion doesn't help, keep original.
+    if (blob.size >= input.size) return input;
+
+    const base = input.name.replace(/\.[^/.]+$/, '');
+    return new File([blob], `${base || 'product'}.webp`, { type: 'image/webp' });
+  } catch {
+    return input;
+  }
+}
 
 function triggerFilePick() {
   fileInput.value?.click();
@@ -514,7 +551,7 @@ function safeFilename(name: string) {
 async function uploadSelectedImage(): Promise<string | null> {
   if (!selectedImageFile.value) return null;
 
-  const file = selectedImageFile.value;
+  const file = await compressImageToWebp(selectedImageFile.value, { maxDim: 1400, quality: 0.8 });
   const nonce = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   const path = `products/${nonce}-${safeFilename(file.name)}`;
 
