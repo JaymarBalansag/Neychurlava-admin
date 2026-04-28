@@ -13,20 +13,19 @@ import type { PageData } from '../components/DashboardPage.vue';
 
 export const dashboardOverviewPage: PageData = {
   hero: {
-    eyebrow: 'Nature operations',
+    eyebrow: 'Neychurlava operations',
     title: 'Dashboard Overview',
     description: 'A calm overview of today: orders, riders, service quality, and revenue signals.',
     primaryAction: 'Open dispatch',
     secondaryAction: 'Review reports',
-    highlightValue: '96%',
-    highlightLabel: 'On-time delivery rate today',
+    highlightValue: '3',
+    highlightLabel: 'Pending Orders',
     trend: 'Steady across lunch and dinner rush',
   },
   metrics: [
-    { label: 'Orders today', value: '128', detail: 'Strong lunch wave', icon: receiptOutline },
-    { label: 'Delivered', value: '86', detail: 'High completion pace', icon: checkmarkDoneCircleOutline },
-    { label: 'Active riders', value: '18', detail: 'Balanced loads', icon: peopleOutline },
-    { label: 'Sales so far', value: 'PHP 28,460', detail: 'Ahead of last week', icon: trendingUpOutline },
+    { label: 'Orders today', value: '128', detail: 'Today at a glance', icon: receiptOutline },
+    { label: 'Delivered', value: '86', detail: 'Today at a glance', icon: checkmarkDoneCircleOutline },
+    { label: 'Sales so far', value: 'PHP 28,460', detail: 'This week', icon: trendingUpOutline },
   ],
   mainSection: {
     kicker: 'What needs attention',

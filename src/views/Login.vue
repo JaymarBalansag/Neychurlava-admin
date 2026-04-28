@@ -57,22 +57,28 @@ import {
   IonLabel,
   IonPage,
 } from '@ionic/vue';
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { supabase } from '../supabase';
+ import { ref } from 'vue';
+ import { useRoute, useRouter } from 'vue-router';
+ import { supabase } from '../supabase';
+ import { initAuth, useAuth, waitForRole } from '../auth';
 
 type IonInputEvent = CustomEvent<{ value?: string | null }>;
 
-const router = useRouter();
+ const router = useRouter();
+ const route = useRoute();
 
 const email = ref('');
 const password = ref('');
 const loading = ref(false);
-const errorMsg = ref('');
+ const errorMsg = ref('');
 
-function onEmail(ev: IonInputEvent) {
-  email.value = ev.detail.value ?? '';
-}
+ if (route.query.reason === 'not_admin') {
+   errorMsg.value = 'Access denied. This app is for admin accounts only.';
+ }
+
+ function onEmail(ev: IonInputEvent) {
+   email.value = ev.detail.value ?? '';
+ }
 
 function onPassword(ev: IonInputEvent) {
   password.value = ev.detail.value ?? '';
@@ -90,18 +96,28 @@ async function signIn() {
       password: password.value,
     });
 
-    if (error) {
-      errorMsg.value = error.message;
-      return;
-    }
+     if (error) {
+       errorMsg.value = error.message;
+       return;
+     }
 
-    await router.replace('/folder/Dashboard');
-  } catch (err) {
-    errorMsg.value = err instanceof Error ? err.message : 'Sign-in failed. Try again.';
-  } finally {
-    loading.value = false;
-  }
-}
+     await initAuth();
+     await waitForRole();
+     const { isAdmin } = useAuth();
+
+     if (!isAdmin.value) {
+       errorMsg.value = 'Access denied. This app is for admin accounts only.';
+       await supabase.auth.signOut();
+       return;
+     }
+
+     await router.replace('/folder/Dashboard');
+   } catch (err) {
+     errorMsg.value = err instanceof Error ? err.message : 'Sign-in failed. Try again.';
+   } finally {
+     loading.value = false;
+   }
+ }
 </script>
 
 <style scoped>

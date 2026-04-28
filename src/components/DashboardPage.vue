@@ -22,11 +22,6 @@
             <p class="eyebrow">{{ page.hero.eyebrow }}</p>
             <h1>{{ page.hero.title }}</h1>
             <p class="hero-text">{{ page.hero.description }}</p>
-
-            <div class="hero-actions">
-              <ion-button color="primary">{{ page.hero.primaryAction }}</ion-button>
-              <ion-button fill="outline" color="primary">{{ page.hero.secondaryAction }}</ion-button>
-            </div>
           </div>
 
           <div class="hero-panel">
@@ -52,49 +47,7 @@
           </article>
         </section>
 
-        <section class="content-grid">
-          <article class="panel-card main-panel">
-            <div class="panel-header">
-              <div>
-                <p class="section-label">{{ page.mainSection.kicker }}</p>
-                <h2>{{ page.mainSection.title }}</h2>
-              </div>
-              <ion-badge color="success">{{ page.mainSection.badge }}</ion-badge>
-            </div>
-
-            <div class="task-list">
-              <div v-for="item in page.mainSection.items" :key="item.title" class="task-item">
-                <div class="task-copy">
-                  <strong>{{ item.title }}</strong>
-                  <p>{{ item.meta }}</p>
-                </div>
-                <div class="task-right">
-                  <span class="task-status">{{ item.status }}</span>
-                  <small>{{ item.value }}</small>
-                </div>
-              </div>
-            </div>
-          </article>
-
-          <article class="panel-card side-panel">
-            <div class="panel-header">
-              <div>
-                <p class="section-label">{{ page.sideSection.kicker }}</p>
-                <h2>{{ page.sideSection.title }}</h2>
-              </div>
-            </div>
-
-            <div class="insight-stack">
-              <div v-for="item in page.sideSection.items" :key="item.title" class="insight-card">
-                <div>
-                  <strong>{{ item.title }}</strong>
-                  <p>{{ item.meta }}</p>
-                </div>
-                <span>{{ item.value }}</span>
-              </div>
-            </div>
-          </article>
-        </section>
+        
       </div>
     </ion-content>
   </ion-page>

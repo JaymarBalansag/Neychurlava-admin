@@ -8,18 +8,18 @@
               <p class="eyebrow">Neychurlava</p>
               <h1>Rooted delivery operations</h1>
               <p class="menu-copy">
-                Track orders, monitor riders, and review daily performance from one calm workspace.
+                Track orders, monitor products, and review daily performance from one calm workspace.
               </p>
             </section>
 
             <div class="menu-summary">
               <div>
-                <span>Active riders</span>
+                <span>Delivered Today</span>
                 <strong>18</strong>
               </div>
               <div>
-                <span>On-time rate</span>
-                <strong>96%</strong>
+                <span>Pending Orders</span>
+                <strong>3</strong>
               </div>
             </div>
 
@@ -111,7 +111,7 @@ const appPages = [
   },
   {
     title: 'Orders',
-    caption: 'Live queue and rider load',
+    caption: 'Live queue for orders',
     url: '/folder/Orders',
     iosIcon: receiptOutline,
     mdIcon: receiptSharp,
