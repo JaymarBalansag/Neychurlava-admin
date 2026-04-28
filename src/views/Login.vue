@@ -42,7 +42,7 @@
           <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
         </section>
 
-        <p class="footnote">Use a Supabase email/password account.</p>
+        <p class="footnote">Use a email/password account.</p>
       </div>
     </ion-content>
   </ion-page>
